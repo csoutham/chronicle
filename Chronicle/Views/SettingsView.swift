@@ -9,6 +9,7 @@ struct SettingsView: View {
     let latestRecord: PrescriptionRecord?
 
     @State private var notificationStatus: UNAuthorizationStatus?
+    @State private var syncStatus: SyncStatus?
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,15 @@ struct SettingsView: View {
                         }
                     } else {
                         Text("No records yet")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Sync") {
+                    HStack {
+                        Text("iCloud Sync")
+                        Spacer()
+                        Text(syncStatus?.displayText ?? "Checking")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -55,11 +65,24 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .task {
                 await refreshNotificationStatus()
+                await refreshSyncStatus()
             }
         }
     }
 
     private func refreshNotificationStatus() async {
         notificationStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
+    private func refreshSyncStatus() async {
+        if ModelContainerFactory.shouldUseTestingContainer(
+            arguments: ProcessInfo.processInfo.arguments,
+            environment: ProcessInfo.processInfo.environment
+        ) {
+            syncStatus = .available
+            return
+        }
+
+        syncStatus = await SyncStatusProvider().currentStatus()
     }
 }

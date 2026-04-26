@@ -1,3 +1,4 @@
+import Charts
 import Foundation
 
 enum EyeSide: String, CaseIterable, Identifiable {
@@ -71,6 +72,28 @@ enum ChartMetric: String, CaseIterable, Identifiable {
             "°"
         case .sph, .cyl, .add:
             "DS"
+        }
+    }
+
+    var interpolationMethod: InterpolationMethod {
+        switch self {
+        case .axis:
+            .linear
+        case .sph, .cyl, .add:
+            .catmullRom
+        }
+    }
+
+    var yDomain: ClosedRange<Double> {
+        switch self {
+        case .sph:
+            -20...10
+        case .cyl:
+            -10...0
+        case .axis:
+            0...180
+        case .add:
+            0...4
         }
     }
 

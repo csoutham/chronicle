@@ -14,13 +14,15 @@ The app has been planned and the visual prototype has been validated. You are pi
 |---|---|---|
 | Language | Swift | Latest stable |
 | UI | SwiftUI | Declarative, iOS-native |
-| Persistence | SwiftData | iOS 17+ only — confirmed acceptable |
+| Persistence | SwiftData + CloudKit | iOS 17+ only - confirmed acceptable |
 | Charts | Swift Charts | Built into iOS 16+, no third-party dependency |
-| Notifications | UNUserNotificationCenter | Local only, no push |
+| Notifications | UNUserNotificationCenter | Local reminders plus CloudKit remote notifications for sync |
 | Minimum deployment | iOS 17 | Required for SwiftData |
 | Xcode | 15+ | Required for SwiftData and Swift Charts |
 
 No CocoaPods, no Swift Package Manager dependencies, no external libraries. The entire app is first-party Apple frameworks only.
+
+Prescription records sync automatically through the user's private iCloud database. Reminder settings stay local to each device.
 
 ---
 
@@ -154,7 +156,7 @@ Empty state: use `ContentUnavailableView` when neither visible eye has at least 
 
 ## Notifications
 
-Use `UNUserNotificationCenter`. Request permission on first launch. Store reminder settings in `AppStorage` using explicit keys for interval months and remind-days-before. Schedule a single local notification based on:
+Use `UNUserNotificationCenter`. Request permission on first launch. Store reminder settings in `AppStorage` using explicit keys for interval months and remind-days-before. These settings are not synced. Schedule a single local notification based on:
 
 ```
 fireDate = lastTestedAt + intervalMonths - remindDaysBefore
@@ -219,11 +221,27 @@ Follow this sequence — each step is testable in isolation before moving on:
 
 ---
 
+## iCloud sync
+
+Use SwiftData's managed CloudKit sync for `PrescriptionRecord` only.
+
+- CloudKit container: `iCloud.com.cjsoutham.chronicle`
+- Database: private database
+- User control: silent automatic sync with status display in Settings
+- Settings: show `iCloud Sync` as `Available`, `Not signed in`, `Restricted`, `Could not determine status`, or `Temporarily unavailable`
+- Reminder preferences: stay per-device in `AppStorage`
+- Background mode: enable remote notifications for CloudKit sync
+- Development schema: initialise in Debug with launch argument `-initialize-cloudkit-schema`, then promote the schema in CloudKit Console before release
+
+Do not add manual import, export, conflict UI, or sharing for this build.
+
+---
+
 ## What is explicitly out of scope for this build
 
 - Camera capture or OCR (post-MVP)
 - Hearing, blood panel, or any other test type (post-MVP)
-- iCloud sync or any backend (post-MVP)
+- Any backend beyond SwiftData CloudKit sync
 - Sharing or export (post-MVP)
 - App Store submission (personal device install via Xcode is sufficient)
 - Authentication (single user, no login)

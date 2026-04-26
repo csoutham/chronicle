@@ -6,8 +6,6 @@ struct RootTabView: View {
     @AppStorage(AppStorageKeys.remindDaysBefore) private var remindDaysBefore = 30
     @Query(sort: \PrescriptionRecord.testedAt, order: .reverse) private var records: [PrescriptionRecord]
 
-    private let reminderScheduler = ReminderScheduler()
-
     private var latestRecord: PrescriptionRecord? {
         records.first
     }
@@ -24,14 +22,19 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
-            HistoryView()
+            OpticalView()
                 .tabItem {
-                    Label("History", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                    Label("Optical", systemImage: "eye")
                 }
 
-            ChartsView()
+            HearingView()
                 .tabItem {
-                    Label("Charts", systemImage: "chart.xyaxis.line")
+                    Label("Hearing", systemImage: "ear")
+                }
+
+            SleepView()
+                .tabItem {
+                    Label("Sleep", systemImage: "bed.double")
                 }
 
             SettingsView(latestRecord: latestRecord)
@@ -41,6 +44,14 @@ struct RootTabView: View {
         }
         .tint(AppPalette.rightEye)
         .task(id: reminderSignature) {
+            guard !ModelContainerFactory.shouldUseTestingContainer(
+                arguments: ProcessInfo.processInfo.arguments,
+                environment: ProcessInfo.processInfo.environment
+            ) else {
+                return
+            }
+
+            let reminderScheduler = ReminderScheduler()
             await reminderScheduler.requestAuthorisationIfNeeded()
             await reminderScheduler.reschedule(
                 lastTestedAt: latestRecord?.testedAt,

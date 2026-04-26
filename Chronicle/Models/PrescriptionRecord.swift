@@ -3,8 +3,8 @@ import SwiftData
 
 @Model
 final class PrescriptionRecord: Identifiable {
-    var id: UUID
-    var testedAt: Date
+    var id: UUID = UUID()
+    var testedAt: Date = Date.now
     var practice: String?
     var notes: String?
 
@@ -62,17 +62,43 @@ extension PrescriptionRecord {
     ]
 
     @MainActor
-    static let previewContainer: ModelContainer = {
+    static func testingContainer(seedPreviews: Bool = false) -> ModelContainer {
         do {
-            let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-            let container = try ModelContainer(for: PrescriptionRecord.self, configurations: configuration)
-            previews.forEach { container.mainContext.insert($0) }
-            try container.mainContext.save()
+            let configuration = ModelContainerFactory.testingConfiguration()
+            let container = try ModelContainer(for: ModelContainerFactory.schema, configurations: [configuration])
+
+            if seedPreviews {
+                previews.forEach { preview in
+                    container.mainContext.insert(preview.copy())
+                }
+                try container.mainContext.save()
+            }
+
             return container
         } catch {
             fatalError("Unable to create preview container: \(error)")
         }
-    }()
+    }
+
+    @MainActor
+    static let previewContainer: ModelContainer = testingContainer(seedPreviews: true)
+
+    func copy() -> PrescriptionRecord {
+        PrescriptionRecord(
+            id: id,
+            testedAt: testedAt,
+            practice: practice,
+            notes: notes,
+            reSph: reSph,
+            reCyl: reCyl,
+            reAxis: reAxis,
+            reAdd: reAdd,
+            leSph: leSph,
+            leCyl: leCyl,
+            leAxis: leAxis,
+            leAdd: leAdd
+        )
+    }
 }
 
 private extension DateComponents {
